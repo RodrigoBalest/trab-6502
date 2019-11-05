@@ -6,12 +6,14 @@ LDX #$10
 STX position
 
 loop:
-  JSR drawShip
-  JSR readInput
+  LDA #$00
+  JSR drawShip  ;pinta nave de preto
+  JSR readInput ;atualiza posição
+  LDA #$0E
+  JSR drawShip  ;pinta nave de azul
   JMP loop
   
 drawShip:
-  LDA #$0E
   LDX position
   STA $05C0, X
   DEX
@@ -26,17 +28,28 @@ drawShip:
 readInput:
   LDX position
   LDY sysLastKey
-;  CPY #$64
-;  BEQ goRight
-;  CPY #$61
-;  BEQ goLeft
+  CPY #$64
+  BEQ goRight
+  CPY #$61
+  BEQ goLeft
 ;  CPY #$77
 ;  BEQ shoot
+  LDX #$00
+  STX posicao
   RTS
 
-;goRight:
-;  CPX $#1E ;máximo à direita
+goRight:
+  CPX #$1E ;máximo à direita
+  BPL dontGoRight
+  INX
+  STX position
+  dontGoRight:
+  RTS
    
-;goLeft:
-;  CPX $#01 ;máximo à esquerda
-  
+goLeft:
+  CPX #$02 ;máximo à esquerda
+  BMI dontGoLeft
+  DEX
+  STX position
+  dontGoLeft:
+  RTS
