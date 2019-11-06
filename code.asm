@@ -1,6 +1,7 @@
 define sysRandom    $fe
 define sysLastKey   $ff
 define position     $00
+define shots        $10 ;primeira célula que armazenará os tiros
 
 LDX #$10
 STX position
@@ -11,6 +12,8 @@ loop:
   JSR readInput ;atualiza posição
   LDA #$0E
   JSR drawShip  ;pinta nave de azul
+  JSR resetInput
+  JSR delay
   JMP loop
   
 drawShip:
@@ -28,12 +31,12 @@ drawShip:
 readInput:
   LDX position
   LDY sysLastKey
-  CPY #$64
+  CPY #$44
   BEQ goRight
-  CPY #$61
+  CPY #$41
   BEQ goLeft
-;  CPY #$77
-;  BEQ shoot
+  CPY #$77
+  BEQ shoot
   LDX #$00
   STX posicao
   RTS
@@ -52,4 +55,21 @@ goLeft:
   DEX
   STX position
   dontGoLeft:
+  RTS
+
+shoot:
+  LDX #$00
+  RTS
+
+delay:
+  LDX #$FF
+  delayLoop:
+  DEX
+  CPX #$00
+  BNE delayLoop
+  RTS
+
+resetInput:
+  LDA #0
+  STA sysLastKey
   RTS
