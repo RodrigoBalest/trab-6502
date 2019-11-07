@@ -119,9 +119,24 @@ updateShots:
 updateShot:
   DEX
   LDA shots,X
+  SEC ;set carry flag
   SBC #$20
   STA shots,X
   INX
+  BCC upShot ;se o carry foi limpo, faz o tiro passar para a faixa acima.
+  RTS
+  upShot:
+  DEC shots,X
+  LDA shots,X
+  CMP #$02
+  BMI clearShot ;se saiu da tela, remove o tiro
+  RTS
+  clearShot:
+  LDA #$00
+  DEX
+  STA shots,X
+  INX
+  STA shots,X
   RTS
 
 delay:
