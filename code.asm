@@ -19,7 +19,7 @@ loop:
   JSR drawShip  ;pinta nave de preto
   LDA #$00
   JSR drawShots ;pinta tiros de preto
-  ;JSR updateShots ;movimenta os tiros
+  JSR updateShots ;movimenta os tiros
   JMP loop
   
 drawShip:
@@ -100,6 +100,28 @@ drawShots:
   INX
   CPX #$06 ; max 3 tiros
   BMI drawNextShot
+  RTS
+
+updateShots:
+  LDX #$01
+  updateNextShot:
+  LDA shots,X
+  CMP #$00 ;verifica se há um valor armazenado
+  BEQ skipUpdateShot ;não há tiro para atualizar
+  JSR updateShot	
+  skipUpdateShot:
+  INX
+  INX
+  CPX #$06 ; max 3 tiros
+  BMI updateNextShot
+  RTS
+
+updateShot:
+  DEX
+  LDA shots,X
+  SBC #$20
+  STA shots,X
+  INX
   RTS
 
 delay:
