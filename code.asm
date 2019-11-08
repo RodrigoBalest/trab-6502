@@ -1,10 +1,13 @@
 define sysRandom    $fe
 define sysLastKey   $ff
-define lastRandom   $F1
+define lastRandom   $F2
 define position     $00
-define shots        $10 ;primeira célula que armazenará os tiros (array 3 posições)
+define shots        $10 ;primeira célula que armazenará os tiros
 define temp         $F0
-define enemies      $20 ;primeira célula que armazenará os inimigos 
+define temp2        $F1
+define enemies      $20 ;primeira célula que armazenará os inimigos
+define numShots     $06 ;nº de tiros: deve ser o dobro
+define numEnemies   $0A ;nº de inimigos: deve ser o dobro
 
 LDX #$10
 STX position
@@ -13,7 +16,7 @@ STA lastRandom
 
 loop:
   JSR readInput ;atualiza posição
-  LDA #$0E
+  LDA #$0E 
   JSR drawShip  ;pinta nave de azul
   LDA #$01
   JSR drawShots ;pinta tiros de branco
@@ -81,7 +84,7 @@ shoot:
   BEQ addShot
   INX
   INX
-  CPX #$06 ; max 3 tiros
+  CPX #numShots
   BMI checkIndexHasShot
   RTS
 
@@ -108,7 +111,7 @@ drawShots:
   skipDrawShot:
   INX
   INX
-  CPX #$06 ; max 3 tiros
+  CPX #numShots ;se não chegou no máximo de tiros, vai para o próximo
   BMI drawNextShot
   RTS
 
@@ -122,7 +125,7 @@ updateShots:
   skipUpdateShot:
   INX
   INX
-  CPX #$06 ; max 3 tiros
+  CPX #numShots ;se não chegou no máximo de tiros, vai para o próximo
   BMI updateNextShot
   RTS
 
@@ -159,7 +162,7 @@ updateEnemies:
   skipUpdateEnemy:
   INX
   INX
-  CPX #$0E ; max 7 inimigos
+  CPX #numEnemies
   BMI updateNextEnemy
   RTS
 
@@ -175,7 +178,7 @@ updateEnemy:
   downEnemy:
   INC enemies,X
   LDA enemies,X
-  CMP #$05
+  CMP #$06
   BPL clearEnemy ;se saiu da tela, remove o inimigo
   RTS
   clearEnemy:
@@ -204,7 +207,7 @@ addEnemyToArray:
   BEQ addEnemy
   INX
   INX
-  CPX #$0E ; max 7 inimigos
+  CPX #numEnemies
   BMI checkIndexHasEnemy
   RTS
 
@@ -213,7 +216,7 @@ addEnemy:
   STA enemies,X
   DEX
   LDA lastRandom
-  AND #$20
+  AND #$1F
   STA enemies,X
   RTS
 
@@ -231,7 +234,7 @@ drawEnemies:
   skipDrawEnemy:
   INX
   INX
-  CPX #$0E ; max 7 inimigos
+  CPX #numEnemies
   BMI drawNextEnemy
   RTS
 
