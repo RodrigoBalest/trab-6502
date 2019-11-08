@@ -1,11 +1,15 @@
 define sysRandom    $fe
 define sysLastKey   $ff
+define lastRandom   $F1
 define position     $00
-define shots        $10 ;primeira célula que armazenará os tiros
+define shots        $10 ;primeira célula que armazenará os tiros (array 3 posições)
 define temp         $F0
+define enemies      $20 ;primeira célula que armazenará os inimigos 
 
 LDX #$10
 STX position
+LDA sysRandom
+STA lastRandom
 
 loop:
   JSR readInput ;atualiza posição
@@ -13,6 +17,8 @@ loop:
   JSR drawShip  ;pinta nave de azul
   LDA #$01
   JSR drawShots ;pinta tiros de branco
+  LDA #$0A
+  JSR drawEnemies
   JSR resetInput
   JSR delay
   LDA #$00
@@ -20,6 +26,10 @@ loop:
   LDA #$00
   JSR drawShots ;pinta tiros de preto
   JSR updateShots ;movimenta os tiros
+  LDA #$00
+  JSR drawEnemies
+  JSR updateEnemies ;gera/atualiza os inimigos
+  JSR generateNewEnemy
   JMP loop
   
 drawShip:
@@ -137,6 +147,92 @@ updateShot:
   STA shots,X
   INX
   STA shots,X
+  RTS
+
+updateEnemies:
+  LDX #$01
+  updateNextEnemy:
+  LDA enemies,X
+  CMP #$00 ;verifica se há um valor armazenado
+  BEQ skipUpdateEnemy ;não há inimigo para atualizar
+  JSR updateEnemy	
+  skipUpdateEnemy:
+  INX
+  INX
+  CPX #$0E ; max 7 inimigos
+  BMI updateNextEnemy
+  RTS
+
+updateEnemy:
+  DEX
+  LDA enemies,X
+  CLC ;clear carry flag
+  ADC #$20
+  STA enemies,X
+  INX
+  BCS downEnemy ;se o carry foi limpo, faz o inimigo passar para a faixa abaixo.
+  RTS
+  downEnemy:
+  INC enemies,X
+  LDA enemies,X
+  CMP #$05
+  BPL clearEnemy ;se saiu da tela, remove o inimigo
+  RTS
+  clearEnemy:
+  LDA #$00
+  DEX
+  STA enemies,X
+  INX
+  STA enemies,X
+  RTS
+
+generateNewEnemy:
+  LDA sysRandom
+  LSR A ;left shift. Bit 0 vai para o carry
+  BCS skipGenerateEnemy ;se carry foi setado, o nº é ímpar. Não será gerado outro inimigo.
+  JSR addEnemyToArray
+  skipGenerateEnemy:
+  LDA sysRandom
+  STA lastRandom
+  RTS
+
+addEnemyToArray:
+  LDX #$01
+  checkIndexHasEnemy:
+  LDA enemies,X
+  CMP #$00 ; verifica se há um valor armazenado
+  BEQ addEnemy
+  INX
+  INX
+  CPX #$0E ; max 7 inimigos
+  BMI checkIndexHasEnemy
+  RTS
+
+addEnemy:
+  LDA #$02
+  STA enemies,X
+  DEX
+  LDA lastRandom
+  AND #$20
+  STA enemies,X
+  RTS
+
+drawEnemies:
+  STA temp ;armazena a cor em uma variável temporária
+  LDX #$01
+  drawNextEnemy:
+  LDA enemies,X
+  CMP #$00 ;verifica se há um valor armazenado
+  BEQ skipDrawEnemy ;não há inimigo para desenhar
+  LDA temp ;carrega a cor
+  DEX
+  STA (enemies,X) ;pinta a posição do inimigo
+  INX
+  skipDrawEnemy:
+  INX
+  INX
+  CPX #$0E ; max 7 inimigos
+  BMI drawNextEnemy
   RTS
 
 delay:
