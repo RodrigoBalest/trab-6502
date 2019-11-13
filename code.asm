@@ -1,13 +1,14 @@
 define sysRandom    $fe
 define sysLastKey   $ff
-define lastRandom   $F2
+define lastRandom   $E0
 define position     $00
 define shots        $10 ;primeira célula que armazenará os tiros
 define temp         $F0
 define temp2        $F1
+define temp3        $F2
 define enemies      $20 ;primeira célula que armazenará os inimigos
 define numShots     $06 ;nº de tiros: deve ser o dobro
-define numEnemies   $0A ;nº de inimigos: deve ser o dobro
+define numEnemies   $0a ;nº de inimigos: deve ser o dobro
 
 LDX #$10
 STX position
@@ -158,7 +159,8 @@ updateEnemies:
   LDA enemies,X
   CMP #$00 ;verifica se há um valor armazenado
   BEQ skipUpdateEnemy ;não há inimigo para atualizar
-  JSR updateEnemy	
+  JSR updateEnemy
+  JSR checkEnemyWasShot
   skipUpdateEnemy:
   INX
   INX
@@ -238,6 +240,62 @@ drawEnemies:
   BMI drawNextEnemy
   RTS
 
+checkEnemyWasShot:
+  STX temp  ;guarda o indice do HB do inimigo para mais tarde
+  DEX
+  LDA enemies,X ;pega o LB do inimigo
+  AND #$1F  ;pega a coluna que o inimigo está
+  STA temp2 ;guarda a coluna que o inimigo está
+  LDX #$00  ;prepara o índice para percorrermos os tiros
+  checkShotHitsEnemy:
+  LDA shots,X ;pega o LB do tiro
+  CMP #$00
+  BEQ checkNextShotHitsEnemy ;se a posição do tiro for 0, ele não existe. Vai para o próximo
+  AND #$1F  ;pega a coluna do tiro
+  CMP temp2 ;compara com a coluna do inimigo
+  BNE checkNextShotHitsEnemy ;se não está na mesma coluna, vai para o próximo tiro
+  ;compara HB do tiro e do inimigo
+  STX temp2 ;guarda o índice do LB do tiro em temp2
+  INX ;vai para o índice do HB do tiro
+  LDA shots,X ;pega o HB do tiro
+  STA temp3 ;guarda o HB do tiro em temp3
+  LDX temp  ;pega o índice do HB do inimigo
+  LDA enemies,X ;pega o HB do inimigo
+  LDX temp2 ;carrega o índice LB do tiro em X
+  CMP temp3 ;compara A com o HB do tiro
+  BMI checkNextShotHitsEnemy ;se o HB do inimigo for menor que do tiro, ele não foi atingido. Vai para o próximo
+  ;compara LB do tiro e do inimigo
+  LDA shots,X ;carrega o LB do tiro
+  STA temp3 ;guarda o LB do tiro em temp3
+  LDX temp  ;pega o índice do HB do inimigo
+  DEX ;pega o índice do LB do inimigo
+  LDA enemies,X ;carrega o LB do inimigo
+  LDX temp2 ;carrega o índice LB do tiro em X
+  CMP temp3 ;compara A com o LB do tiro
+  BMI checkNextShotHitsEnemy ;se o HB do inimigo for menor que do tiro, ele não foi atingido. Vai para o próximo
+  JSR killEnemy ;se chegamos aqui, o tiro acertou o inimigo
+  checkNextShotHitsEnemy:
+  INX
+  INX
+  CPX #numShots
+  BMI checkShotHitsEnemy
+  LDX temp  ;recupera o HB do inimigo
+  RTS
+
+killEnemy:
+  ;temp2 contém o índice do LB do tiro
+  ;temp contém o índice do HB do inimigo
+  LDA #$00
+  LDX temp2 ;recupera o índice do LB do tiro
+  STA shots,X ;reseta o LB do tiro
+  INX
+  STA shots,X ;reseta o HB do tiro
+  LDX temp ;recupera o índice do HB do inimigo
+  STA enemies,X ;reseta o HB do tiro
+  DEX
+  STA enemies,X ;reseta o LB do tiro
+  RTS
+
 delay:
   LDX #$FF
   delayLoop:
@@ -250,3 +308,5 @@ resetInput:
   LDA #0
   STA sysLastKey
   RTS
+
+end:
